@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>사범대 복수전공 졸업 학점 시뮬레이터</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --border-focus: #94a3b8;
+      --text-main: #0f172a;
+      --text-sub: #64748b;
+      --accent: #2563eb;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding-bottom: 90px;
+    }
+
+    header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .title-area h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .title-area p {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn {
+      background: #f1f5f9;
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: var(--radius);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: #e2e8f0;
+    }
+
+    .btn-primary {
+      background: var(--text-main);
+      color: #fff;
+      border-color: var(--text-main);
+    }
+
+    .btn-primary:hover {
+      background: #334155;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 16px auto;
+      padding: 0 16px;
+    }
+
+    /* 통계 대시보드 */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .stat-val {
+      font-size: 1.15rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-val.primary {
+      color: var(--accent);
+      font-size: 1.25rem;
+    }
+
+    /* 탭 내비게이션 */
+    .tab-bar {
+      display: flex;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+      background: var(--card-bg);
+      border-radius: var(--radius) var(--radius) 0 0;
+      border: 1px solid var(--border);
+    }
+
+    .tab-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab-btn {
+      padding: 12px 16px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-sub);
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .section-content {
+      display: none;
+    }
+
+    .section-content.active {
+      display: block;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #f1f5f9;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .card-badge {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      background: #f1f5f9;
+      font-weight: 600;
+      color: var(--text-sub);
+      white-space: nowrap;
+    }
+
+    .card-badge.ok {
+      background: #dcfce7;
+      color: var(--success);
+    }
+
+    .card-badge.warn {
+      background: #fee2e2;
+      color: var(--danger);
+    }
+
+    /* 체크리스트 */
+    .check-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #ffffff;
+      cursor: pointer;
+      transition: background-color 0.1s ease, border-color 0.1s ease;
+      min-height: 48px;
+    }
+
+    .check-item:hover {
+      background: #f8fafc;
+    }
+
+    .check-item.checked {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    .check-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .check-box {
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid #94a3b8;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: #fff;
+    }
+
+    .check-item.checked .check-box {
+      background: var(--text-main);
+      border-color: var(--text-main);
+    }
+
+    .check-box::after {
+      content: "";
+      width: 5px;
+      height: 9px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      display: none;
+      margin-bottom: 2px;
+    }
+
+    .check-item.checked .check-box::after {
+      display: block;
+    }
+
+    .item-name {
+      font-size: 0.88rem;
+      font-weight: 500;
+    }
+
+    .check-item.checked .item-name {
+      color: #94a3b8;
+      text-decoration: line-through;
+    }
+
+    .item-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      color: var(--text-sub);
+      flex-shrink: 0;
+    }
+
+    .tag {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 500;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .input-text {
+      flex: 1;
+      min-width: 160px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .input-text:focus {
+      border-color: var(--border-focus);
+    }
+
+    .input-select {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      background: #fff;
+      outline: none;
+    }
+
+    .del-btn {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 4px 8px;
+      font-size: 0.85rem;
+    }
+
+    .del-btn:hover {
+      color: var(--danger);
+    }
+
+    /* 하단 고정 바 */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 50;
+    }
+
+    .bottom-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .bottom-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .bottom-title {
+      font-size: 0.72rem;
+      color: var(--text-sub);
+    }
+
+    .bottom-val {
+      font-size: 1.15rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bottom-badge {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        padding: 0 12px;
+      }
+      .title-area h1 {
+        font-size: 1.05rem;
+      }
+      .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .check-item {
+        padding: 8px 10px;
+      }
+      .item-name {
+        font-size: 0.82rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="title-area">
+        <h1>사범대학 졸업 학점 시뮬레이터</h1>
+        <p>[주전공] 컴퓨터교육과 × [복수전공] 기술·가정교육과 (기준 142학점+)</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn" onclick="exportData()">내보내기</button>
+        <button class="btn" onclick="triggerImport()">가져오기</button>
+        <button class="btn" onclick="resetAll()">초기화</button>
+        <input type="file" id="importInput" style="display:none" accept=".json" onchange="importData(event)">
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <div class="dashboard-grid">
+      <div class="stat-card">
+        <div class="stat-label">총 이수 학점</div>
+        <div class="stat-val primary"><span id="sumTotal">0</span> / 142</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">교양 (필수+선택)</div>
+        <div class="stat-val"><span id="sumGe">0</span> / 18</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">교직 과정</div>
+        <div class="stat-val"><span id="sumTeach">0</span> / 24</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">컴퓨터교육과</div>
+        <div class="stat-val"><span id="sumCs">0</span> 학점</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">기술·가정교육과</div>
+        <div class="stat-val"><span id="sumTech">0</span> 학점</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">융합탐색</div>
+        <div class="stat-val"><span id="sumFusion">0</span> 학점</div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="setTab('ge')">1. 교양 과정</button>
+      <button class="tab-btn" onclick="setTab('teach')">2. 교직 과정</button>
+      <button class="tab-btn" onclick="setTab('cs')">3. 컴퓨터교육 (주전공)</button>
+      <button class="tab-btn" onclick="setTab('tech')">4. 기술·가정 (복수전공)</button>
+      <button class="tab-btn" onclick="setTab('fusion')">5. 융합탐색</button>
+    </div>
+
+    <!-- 1. 교양 -->
+    <div id="tab-ge" class="section-content active">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">교양필수 (5과목 10학점 전원 이수)</span>
+          <span class="card-badge" id="badge-ge-req">0 / 10 학점</span>
+        </div>
+        <div class="check-list" id="list-ge-req"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">교양선택 (8학점 이상 이수)</span>
+          <span class="card-badge" id="badge-ge-sel">0 / 8 학점</span>
+        </div>
+        <div class="input-row">
+          <input type="text" id="geSelName" class="input-text" placeholder="과목명 입력 (Enter로 추가)">
+          <select id="geSelCredit" class="input-select">
+            <option value="3">3학점</option>
+            <option value="2">2학점</option>
+            <option value="1">1학점</option>
+          </select>
+          <button type="button" class="btn btn-primary" onclick="addGeSel()">추가</button>
+        </div>
+        <div class="check-list" id="list-ge-sel"></div>
+      </div>
+    </div>
+
+    <!-- 2. 교직 -->
+    <div id="tab-teach" class="section-content">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">교직소양 (4과목 8학점 필수)</span>
+          <span class="card-badge" id="badge-teach-soyang">0 / 8 학점</span>
+        </div>
+        <div class="check-list" id="list-teach-soyang"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">교직이론 (8과목 중 6과목 12학점 선택)</span>
+          <span class="card-badge" id="badge-teach-theory">0 / 12 학점</span>
+        </div>
+        <div class="check-list" id="list-teach-theory"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">교육실습 (3과목 4학점 필수)</span>
+          <span class="card-badge" id="badge-teach-prac">0 / 4 학점</span>
+        </div>
+        <div class="check-list" id="list-teach-prac"></div>
+      </div>
+    </div>
+
+    <!-- 3. 컴퓨터교육과 -->
+    <div id="tab-cs" class="section-content">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">전공필수 (7과목 21학점 전원 이수)</span>
+          <span class="card-badge" id="badge-cs-req">0 / 21 학점</span>
+        </div>
+        <div class="check-list" id="list-cs-req"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">전공선택 및 이수 요건</span>
+            <div style="font-size:0.75rem; color:var(--text-sub); margin-top:2px;">* 캡스톤Ⅱ 필수 이수 + 캡스톤 제외 51학점 이상 이수</div>
+          </div>
+          <span class="card-badge" id="badge-cs-sel">0 학점</span>
+        </div>
+        <div class="check-list" id="list-cs-sel"></div>
+      </div>
+    </div>
+
+    <!-- 4. 기술·가정교육과 -->
+    <div id="tab-tech" class="section-content">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">전공필수 (13과목 39학점 전원 이수)</span>
+          <span class="card-badge" id="badge-tech-req">0 / 39 학점</span>
+        </div>
+        <div class="check-list" id="list-tech-req"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">전공선택 (내용학 3개 + 교과교육학 1개 이상)</span>
+            <div style="font-size:0.75rem; color:var(--text-sub); margin-top:2px;">* 내용학 관련 3과목 및 교과교육학 관련 1과목 필수</div>
+          </div>
+          <span class="card-badge" id="badge-tech-sel">0 학점</span>
+        </div>
+        <div class="check-list" id="list-tech-sel"></div>
+      </div>
+    </div>
+
+    <!-- 5. 융합탐색 -->
+    <div id="tab-fusion" class="section-content">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">융합탐색 과목 등록</span>
+          <span class="card-badge" id="badge-fusion">0 학점</span>
+        </div>
+        <div class="input-row">
+          <input type="text" id="fusionName" class="input-text" placeholder="융합탐색 과목명 입력 후 Enter">
+          <select id="fusionCredit" class="input-select">
+            <option value="2">2학점</option>
+            <option value="3">3학점</option>
+            <option value="1">1학점</option>
+          </select>
+          <button type="button" class="btn btn-primary" onclick="addFusion()">추가</button>
+        </div>
+        <div class="check-list" id="list-fusion"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <div class="bottom-bar">
+    <div class="bottom-inner">
+      <div class="bottom-info">
+        <span class="bottom-title">총 누적 졸업 이수 학점 (기준 142+)</span>
+        <span class="bottom-val"><span id="sumTotalBottom">0</span> / 142 학점</span>
+      </div>
+      <span class="bottom-badge" id="gradStatusBadge">요건 분석중</span>
+    </div>
+  </div>
+
+  <script>
+    const STATIC_DATA = {
+      geReq: [
+        { id: "ge_1", name: "Communication in English SW", credit: 2 },
+        { id: "ge_2", name: "Communication in English LR", credit: 2 },
+        { id: "ge_3", name: "비판적 사고와 소통", credit: 3 },
+        { id: "ge_4", name: "컴퓨팅적 사고", credit: 2 },
+        { id: "ge_5", name: "대학 생활과 미래 설계", credit: 1 }
+      ],
+      teachSoyang: [
+        { id: "ts_1", name: "특수교육학개론", credit: 2 },
+        { id: "ts_2", name: "교직실무", credit: 2 },
+        { id: "ts_3", name: "생활지도와 상담", credit: 2 },
+        { id: "ts_4", name: "디지털 교육", credit: 2 }
+      ],
+      teachTheory: [
+        { id: "tt_1", name: "교육학개론", credit: 2 },
+        { id: "tt_2", name: "교육철학 및 교육사", credit: 2 },
+        { id: "tt_3", name: "교육과정", credit: 2 },
+        { id: "tt_4", name: "교육방법 및 교육공학", credit: 2 },
+        { id: "tt_5", name: "교육심리", credit: 2 },
+        { id: "tt_6", name: "교육사회", credit: 2 },
+        { id: "tt_7", name: "교육행정 및 교육경영", credit: 2 },
+        { id: "tt_8", name: "교육평가", credit: 2 }
+      ],
+      teachPrac: [
+        { id: "tp_1", name: "교육봉사1", credit: 1 },
+        { id: "tp_2", name: "교육봉사2", credit: 1 },
+        { id: "tp_3", name: "학교 현장 실습1", credit: 2 }
+      ],
+      csReq: [
+        { id: "cs_r1", name: "프로그래밍", credit: 3 },
+        { id: "cs_r2", name: "자료구조", credit: 3 },
+        { id: "cs_r3", name: "컴퓨터구조", credit: 3 },
+        { id: "cs_r4", name: "알고리즘", credit: 3 },
+        { id: "cs_r5", name: "정보윤리교육개론", credit: 3 },
+        { id: "cs_r6", name: "운영체제", credit: 3 },
+        { id: "cs_r7", name: "정보교과교육론", credit: 3 }
+      ],
+      csSel: [
+        { id: "cs_s1", name: "이산수학", credit: 3, track: "기본이수", isCapstone: false },
+        { id: "cs_s2", name: "논리회로", credit: 3, track: "기본이수", isCapstone: false },
+        { id: "cs_s3", name: "컴퓨터의 개념 및 실습", credit: 3, track: "전공선택", isCapstone: false },
+        { id: "cs_s4", name: "데이터베이스", credit: 3, track: "기본이수", isCapstone: false },
+        { id: "cs_s5", name: "데이터통신", credit: 3, track: "전공선택", isCapstone: false },
+        { id: "cs_s6", name: "소프트웨어공학", credit: 3, track: "기본이수", isCapstone: false },
+        { id: "cs_s7", name: "컴퓨터네트워크", credit: 3, track: "기본이수", isCapstone: false },
+        { id: "cs_s8", name: "인공지능", credit: 3, track: "기본이수", isCapstone: false },
+        { id: "cs_s9", name: "정보교과교재연구", credit: 3, track: "교과교육", isCapstone: false },
+        { id: "cs_s10", name: "정보교과교수법", credit: 3, track: "교과교육", isCapstone: false },
+        { id: "cs_s11", name: "컴퓨터그래픽스", credit: 3, track: "심화", isCapstone: false },
+        { id: "cs_s12", name: "고급프로그래밍", credit: 3, track: "심화", isCapstone: false },
+        { id: "cs_s13", name: "정보교과 평가방법", credit: 3, track: "교과교육", isCapstone: false },
+        { id: "cs_s14", name: "멀티미디어", credit: 3, track: "심화", isCapstone: false },
+        { id: "cs_s15", name: "시스템분석 및 설계", credit: 3, track: "심화", isCapstone: false },
+        { id: "cs_s16", name: "캡스톤디자인Ⅰ", credit: 1, track: "프로젝트", isCapstone: true },
+        { id: "cs_s17", name: "데이터베이스 설계", credit: 3, track: "심화", isCapstone: false },
+        { id: "cs_s18", name: "서버구축론", credit: 3, track: "심화", isCapstone: false },
+        { id: "cs_s19", name: "정보교과교육과정", credit: 3, track: "교과교육", isCapstone: false },
+        { id: "cs_s20", name: "정보논리논술개론", credit: 3, track: "교과교육", isCapstone: false },
+        { id: "cs_s21", name: "캡스톤디자인Ⅱ", credit: 1, track: "필수선택", isCapstone: true },
+        { id: "cs_s22", name: "기계학습", credit: 3, track: "심화", isCapstone: false },
+        { id: "cs_s23", name: "정보보안", credit: 3, track: "심화", isCapstone: false },
+        { id: "cs_s24", name: "피지컬컴퓨팅", credit: 3, track: "심화", isCapstone: false },
+        { id: "cs_s25", name: "로보틱스", credit: 3, track: "심화", isCapstone: false },
+        { id: "cs_s26", name: "데이터과학", credit: 3, track: "심화", isCapstone: false }
+      ],
+      techReq: [
+        { id: "te_r1", name: "정보통신", credit: 3 },
+        { id: "te_r2", name: "영양학", credit: 3 },
+        { id: "te_r3", name: "생명기술기초", credit: 3 },
+        { id: "te_r4", name: "가족학", credit: 3 },
+        { id: "te_r5", name: "제조기술", credit: 3 },
+        { id: "te_r6", name: "의복재료와 관리", credit: 3 },
+        { id: "te_r7", name: "기술·가정교육론", credit: 3 },
+        { id: "te_r8", name: "수송기술", credit: 3 },
+        { id: "te_r9", name: "가정생활과 복지", credit: 3 },
+        { id: "te_r10", name: "주거학", credit: 3 },
+        { id: "te_r11", name: "건설기술", credit: 3 },
+        { id: "te_r12", name: "기술·가정 교재연구 및 지도법", credit: 3 },
+        { id: "te_r13", name: "소비자학", credit: 3 }
+      ],
+      techSel: [
+        { id: "te_s1", name: "수공예", credit: 3, type: "content" },
+        { id: "te_s2", name: "게이미피케이션 기반 학습자료개발", credit: 3, type: "content" },
+        { id: "te_s3", name: "공학 기초 역학", credit: 3, type: "content" },
+        { id: "te_s4", name: "전기전자기술", credit: 3, type: "content" },
+        { id: "te_s5", name: "발명과 지식재산일반", credit: 3, type: "content" },
+        { id: "te_s6", name: "한국조리", credit: 3, type: "content" },
+        { id: "te_s7", name: "의복디자인과 구성", credit: 3, type: "content" },
+        { id: "te_s8", name: "컴퓨터 프로그래밍", credit: 3, type: "content" },
+        { id: "te_s9", name: "외국조리", credit: 3, type: "content" },
+        { id: "te_s10", name: "기술·가정교수법", credit: 3, type: "edu" },
+        { id: "te_s11", name: "전기전자실습", credit: 3, type: "content" },
+        { id: "te_s12", name: "식품과학과 조지원리", credit: 3, type: "content" },
+        { id: "te_s13", name: "인간발달", credit: 3, type: "content" },
+        { id: "te_s14", name: "기술·가정평가방법", credit: 3, type: "edu" },
+        { id: "te_s15", name: "기계기술", credit: 3, type: "content" },
+        { id: "te_s16", name: "가정자원과 재무관리", credit: 3, type: "content" },
+        { id: "te_s17", name: "첨단기술과 기술교육의 최신과제", credit: 3, type: "content" },
+        { id: "te_s18", name: "기술·가정 논리 및 논술", credit: 2, type: "edu" },
+        { id: "te_s19", name: "자동차기술", credit: 3, type: "content" },
+        { id: "te_s20", name: "의복행동과 캡스톤 디자인", credit: 3, type: "content" },
+        { id: "te_s21", name: "설계와 문제해결", credit: 3, type: "content" },
+        { id: "te_s22", name: "창의적종합설계", credit: 3, type: "content" }
+      ]
+    };
+
+    let appState = {
+      checked: {},
+      customGe: [],
+      customFusion: []
+    };
+
+    window.addEventListener("DOMContentLoaded", () => {
+      loadStorage();
+      renderAll();
+      setupKeyListeners();
+    });
+
+    function setupKeyListeners() {
+      const geInput = document.getElementById("geSelName");
+      if (geInput) {
+        geInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            addGeSel();
+          }
+        });
+      }
+
+      const fusionInput = document.getElementById("fusionName");
+      if (fusionInput) {
+        fusionInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            addFusion();
+          }
+        });
+      }
+    }
+
+    function setTab(name) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".section-content").forEach(s => s.classList.remove("active"));
+      
+      const targetBtn = Array.from(document.querySelectorAll(".tab-btn")).find(b => b.getAttribute("onclick").includes(name));
+      if (targetBtn) targetBtn.classList.add("active");
+      
+      const targetSec = document.getElementById("tab-" + name);
+      if (targetSec) targetSec.classList.add("active");
+    }
+
+    function toggleCheck(id) {
+      appState.checked[id] = !appState.checked[id];
+      saveStorage();
+      updateUI();
+    }
+
+    function addGeSel() {
+      const nameInput = document.getElementById("geSelName");
+      const creditSelect = document.getElementById("geSelCredit");
+      const name = nameInput.value.trim();
+      const credit = parseInt(creditSelect.value, 10);
+
+      if (!name) {
+        nameInput.focus();
+        return;
+      }
+
+      const newId = "c_ge_" + Date.now();
+      appState.customGe.push({ id: newId, name: name, credit: credit });
+      appState.checked[newId] = true;
+      nameInput.value = "";
+      nameInput.focus();
+
+      saveStorage();
+      renderCustomGe();
+      updateUI();
+    }
+
+    function delGeSel(id, e) {
+      if (e) e.stopPropagation();
+      appState.customGe = appState.customGe.filter(item => item.id !== id);
+      delete appState.checked[id];
+      saveStorage();
+      renderCustomGe();
+      updateUI();
+    }
+
+    function addFusion() {
+      const nameInput = document.getElementById("fusionName");
+      const creditSelect = document.getElementById("fusionCredit");
+      const name = nameInput.value.trim();
+      const credit = parseInt(creditSelect.value, 10);
+
+      if (!name) {
+        nameInput.focus();
+        return;
+      }
+
+      const newId = "c_fu_" + Date.now();
+      appState.customFusion.push({ id: newId, name: name, credit: credit });
+      appState.checked[newId] = true;
+      nameInput.value = "";
+      nameInput.focus();
+
+      saveStorage();
+      renderCustomFusion();
+      updateUI();
+    }
+
+    function delFusion(id, e) {
+      if (e) e.stopPropagation();
+      appState.customFusion = appState.customFusion.filter(item => item.id !== id);
+      delete appState.checked[id];
+      saveStorage();
+      renderCustomFusion();
+      updateUI();
+    }
+
+    function renderList(targetId, items, tagGenerator) {
+      const container = document.getElementById(targetId);
+      if (!container) return;
+      container.innerHTML = items.map(item => {
+        const isChecked = !!appState.checked[item.id];
+        const tagHtml = tagGenerator ? tagGenerator(item) : `<span class="tag">${item.credit}학점</span>`;
+        return `
+          <div class="check-item ${isChecked ? 'checked' : ''}" onclick="toggleCheck('${item.id}')">
+            <div class="check-left">
+              <div class="check-box"></div>
+              <span class="item-name">${item.name}</span>
+            </div>
+            <div class="item-meta">
+              ${tagHtml}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderCustomGe() {
+      const container = document.getElementById("list-ge-sel");
+      if (!container) return;
+      container.innerHTML = appState.customGe.map(item => {
+        const isChecked = !!appState.checked[item.id];
+        return `
+          <div class="check-item ${isChecked ? 'checked' : ''}" onclick="toggleCheck('${item.id}')">
+            <div class="check-left">
+              <div class="check-box"></div>
+              <span class="item-name">${item.name}</span>
+            </div>
+            <div class="item-meta">
+              <span class="tag">${item.credit}학점</span>
+              <button class="del-btn" onclick="delGeSel('${item.id}', event)">삭제</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderCustomFusion() {
+      const container = document.getElementById("list-fusion");
+      if (!container) return;
+      container.innerHTML = appState.customFusion.map(item => {
+        const isChecked = !!appState.checked[item.id];
+        return `
+          <div class="check-item ${isChecked ? 'checked' : ''}" onclick="toggleCheck('${item.id}')">
+            <div class="check-left">
+              <div class="check-box"></div>
+              <span class="item-name">${item.name}</span>
+            </div>
+            <div class="item-meta">
+              <span class="tag">${item.credit}학점</span>
+              <button class="del-btn" onclick="delFusion('${item.id}', event)">삭제</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderAll() {
+      renderList("list-ge-req", STATIC_DATA.geReq);
+      renderCustomGe();
+      renderList("list-teach-soyang", STATIC_DATA.teachSoyang);
+      renderList("list-teach-theory", STATIC_DATA.teachTheory);
+      renderList("list-teach-prac", STATIC_DATA.teachPrac);
+      renderList("list-cs-req", STATIC_DATA.csReq);
+      renderList("list-cs-sel", STATIC_DATA.csSel, item => {
+        const isCap = item.id === "cs_s21" ? `<span class="tag" style="color:var(--accent); font-weight:700;">필수이수</span>` : "";
+        return `${isCap}<span class="tag">${item.track}</span><span class="tag">${item.credit}학점</span>`;
+      });
+      renderList("list-tech-req", STATIC_DATA.techReq);
+      renderList("list-tech-sel", STATIC_DATA.techSel, item => {
+        const isEdu = item.type === "edu";
+        return `<span class="tag" style="${isEdu ? 'color:var(--accent); font-weight:700;' : ''}">${isEdu ? '교과교육학' : '내용학'}</span><span class="tag">${item.credit}학점</span>`;
+      });
+      renderCustomFusion();
+      updateUI();
+    }
+
+    function updateUI() {
+      // 1. 교양
+      let geReqCredits = 0, geReqCount = 0;
+      STATIC_DATA.geReq.forEach(item => {
+        if (appState.checked[item.id]) {
+          geReqCredits += item.credit;
+          geReqCount++;
+        }
+      });
+      const geReqBadge = document.getElementById("badge-ge-req");
+      geReqBadge.textContent = `${geReqCredits} / 10 학점 (${geReqCount}/5)`;
+      geReqBadge.className = "card-badge " + (geReqCredits >= 10 ? "ok" : "warn");
+
+      let geSelCredits = 0;
+      appState.customGe.forEach(item => {
+        if (appState.checked[item.id]) geSelCredits += item.credit;
+      });
+      const geSelBadge = document.getElementById("badge-ge-sel");
+      geSelBadge.textContent = `${geSelCredits} / 8 학점`;
+      geSelBadge.className = "card-badge " + (geSelCredits >= 8 ? "ok" : "warn");
+
+      // 2. 교직
+      let soyangCredits = 0, soyangCount = 0;
+      STATIC_DATA.teachSoyang.forEach(item => {
+        if (appState.checked[item.id]) {
+          soyangCredits += item.credit;
+          soyangCount++;
+        }
+      });
+      const soyangBadge = document.getElementById("badge-teach-soyang");
+      soyangBadge.textContent = `${soyangCredits} / 8 학점 (${soyangCount}/4)`;
+      soyangBadge.className = "card-badge " + (soyangCredits >= 8 ? "ok" : "warn");
+
+      let theoryCredits = 0, theoryCount = 0;
+      STATIC_DATA.teachTheory.forEach(item => {
+        if (appState.checked[item.id]) {
+          theoryCredits += item.credit;
+          theoryCount++;
+        }
+      });
+      const theoryBadge = document.getElementById("badge-teach-theory");
+      theoryBadge.textContent = `${theoryCredits} / 12 학점 (${theoryCount}/6선택)`;
+      theoryBadge.className = "card-badge " + (theoryCount >= 6 ? "ok" : "warn");
+
+      let pracCredits = 0, pracCount = 0;
+      STATIC_DATA.teachPrac.forEach(item => {
+        if (appState.checked[item.id]) {
+          pracCredits += item.credit;
+          pracCount++;
+        }
+      });
+      const pracBadge = document.getElementById("badge-teach-prac");
+      pracBadge.textContent = `${pracCredits} / 4 학점 (${pracCount}/3)`;
+      pracBadge.className = "card-badge " + (pracCredits >= 4 ? "ok" : "warn");
+
+      // 3. 컴퓨터교육과 (캡스톤 제외 51학점 이상 + 캡스톤Ⅱ 필수)
+      let csReqCredits = 0, csReqCount = 0;
+      STATIC_DATA.csReq.forEach(item => {
+        if (appState.checked[item.id]) {
+          csReqCredits += item.credit;
+          csReqCount++;
+        }
+      });
+      const csReqBadge = document.getElementById("badge-cs-req");
+      csReqBadge.textContent = `${csReqCredits} / 21 학점 (${csReqCount}/7)`;
+      csReqBadge.className = "card-badge " + (csReqCount === 7 ? "ok" : "warn");
+
+      let csSelCredits = 0;
+      let csNonCapstoneCredits = csReqCredits; // 전필(21학점)은 캡스톤이 아님
+
+      STATIC_DATA.csSel.forEach(item => {
+        if (appState.checked[item.id]) {
+          csSelCredits += item.credit;
+          if (!item.isCapstone) {
+            csNonCapstoneCredits += item.credit;
+          }
+        }
+      });
+
+      const csCap2Done = !!appState.checked["cs_s21"];
+      const csMajorOk = (csReqCount === 7 && csCap2Done && csNonCapstoneCredits >= 51);
+      const csSelBadge = document.getElementById("badge-cs-sel");
+      csSelBadge.textContent = `캡스톤 제외 ${csNonCapstoneCredits} / 51학점 | 캡스톤Ⅱ: ${csCap2Done ? "완료" : "미완료"}`;
+      csSelBadge.className = "card-badge " + (csMajorOk ? "ok" : "warn");
+
+      // 4. 기술·가정교육과 (내용학 3개 + 교과교육학 1개)
+      let techReqCredits = 0, techReqCount = 0;
+      STATIC_DATA.techReq.forEach(item => {
+        if (appState.checked[item.id]) {
+          techReqCredits += item.credit;
+          techReqCount++;
+        }
+      });
+      const techReqBadge = document.getElementById("badge-tech-req");
+      techReqBadge.textContent = `${techReqCredits} / 39 학점 (${techReqCount}/13)`;
+      techReqBadge.className = "card-badge " + (techReqCount === 13 ? "ok" : "warn");
+
+      let techEduCount = 0, techContentCount = 0, techSelCredits = 0;
+      STATIC_DATA.techSel.forEach(item => {
+        if (appState.checked[item.id]) {
+          techSelCredits += item.credit;
+          if (item.type === "edu") techEduCount++;
+          if (item.type === "content") techContentCount++;
+        }
+      });
+      const techSelOk = (techContentCount >= 3 && techEduCount >= 1);
+      const techSelBadge = document.getElementById("badge-tech-sel");
+      techSelBadge.textContent = `${techSelCredits}학점 (내용학: ${techContentCount}/3, 교과교육학: ${techEduCount}/1)`;
+      techSelBadge.className = "card-badge " + (techSelOk ? "ok" : "warn");
+
+      // 5. 융합탐색
+      let fusionCredits = 0;
+      appState.customFusion.forEach(item => {
+        if (appState.checked[item.id]) fusionCredits += item.credit;
+      });
+      document.getElementById("badge-fusion").textContent = `${fusionCredits} 학점`;
+
+      // 총합계 집계
+      const totalGe = geReqCredits + geSelCredits;
+      const totalTeach = soyangCredits + theoryCredits + pracCredits;
+      const totalCs = csReqCredits + csSelCredits;
+      const totalTech = techReqCredits + techSelCredits;
+      const totalAll = totalGe + totalTeach + totalCs + totalTech + fusionCredits;
+
+      document.getElementById("sumTotal").textContent = totalAll;
+      document.getElementById("sumTotalBottom").textContent = totalAll;
+      document.getElementById("sumGe").textContent = totalGe;
+      document.getElementById("sumTeach").textContent = totalTeach;
+      document.getElementById("sumCs").textContent = totalCs;
+      document.getElementById("sumTech").textContent = totalTech;
+      document.getElementById("sumFusion").textContent = fusionCredits;
+
+      // 전체 졸업 요건 종합 판별
+      const isGradReady = (
+        geReqCredits >= 10 &&
+        geSelCredits >= 8 &&
+        soyangCredits >= 8 &&
+        theoryCount >= 6 &&
+        pracCredits >= 4 &&
+        csMajorOk &&
+        techReqCount === 13 &&
+        techSelOk &&
+        totalAll >= 142
+      );
+
+      const gradBadge = document.getElementById("gradStatusBadge");
+      if (isGradReady) {
+        gradBadge.textContent = "졸업 요건 만족";
+        gradBadge.style.background = "#dcfce7";
+        gradBadge.style.color = "#16a34a";
+      } else {
+        gradBadge.textContent = `미충족 요건 검토 필요 (${totalAll}/142)`;
+        gradBadge.style.background = "#fee2e2";
+        gradBadge.style.color = "#dc2626";
+      }
+
+      // 동적 체크박스 뷰 갱신
+      document.querySelectorAll(".check-item").forEach(el => {
+        const oc = el.getAttribute("onclick");
+        if (oc) {
+          const match = oc.match(/'([^']+)'/);
+          if (match && appState.checked[match[1]]) {
+            el.classList.add("checked");
+          } else {
+            el.classList.remove("checked");
+          }
+        }
+      });
+    }
+
+    function saveStorage() {
+      localStorage.setItem("knu_dual_grad_data", JSON.stringify(appState));
+    }
+
+    function loadStorage() {
+      const data = localStorage.getItem("knu_dual_grad_data");
+      if (data) {
+        try {
+          appState = JSON.parse(data);
+          if (!appState.customGe) appState.customGe = [];
+          if (!appState.customFusion) appState.customFusion = [];
+          if (!appState.checked) appState.checked = {};
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    function resetAll() {
+      if (confirm("모든 이수 내역과 직접 등록한 과목을 초기화하시겠습니까?")) {
+        appState = { checked: {}, customGe: [], customFusion: [] };
+        saveStorage();
+        renderAll();
+      }
+    }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify(appState, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `사범대_학점체크_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function triggerImport() {
+      document.getElementById("importInput").click();
+    }
+
+    function importData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const imported = JSON.parse(event.target.result);
+          if (imported && typeof imported === "object") {
+            appState = imported;
+            saveStorage();
+            renderAll();
+            alert("학점 데이터가 성공적으로 복구되었습니다.");
+          }
+        } catch (err) {
+          alert("유효한 백업 JSON 파일이 아닙니다.");
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = "";
+    }
+  </script>
+</body>
+</html>
